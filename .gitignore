@@ -180,3 +180,6 @@ ssl-certs/
 
 # Django collectstatic output in the example project
 /example_project/staticfiles/
+
+# macOS
+.DS_Store
