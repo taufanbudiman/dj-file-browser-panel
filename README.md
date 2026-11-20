@@ -153,7 +153,41 @@ python manage.py runserver
 ```
 
 Tests run with `pytest-django` against `tmp_path` fixtures — they never touch
-the repo root or real media directories.
+the repo root or real media directories. Coverage is enforced at 85%
+(`--cov-fail-under=85`) and runs on every push/PR via GitHub Actions.
+
+## Contributing
+
+Contributions are welcome — bug reports, docs fixes, and features alike.
+
+1. **Fork and clone** the repository, then set up a dev environment:
+
+   ```bash
+   pip install -e ".[dev]"
+   ```
+
+2. **Run the checks locally before pushing:**
+
+   ```bash
+   pytest                    # tests + coverage (must stay >= 85%)
+   ruff check . && ruff format .
+   ```
+
+3. **Open a pull request** against `main` with a short description of the
+   change and any relevant context (issue link, screenshots for UI changes).
+
+House rules:
+
+- **Read-only, always.** The panel must never gain upload, delete, rename,
+  chmod, or any other filesystem mutation. Every filesystem path must stay
+  inside a configured root (`Path.resolve()` + `is_relative_to`) — reject
+  `..` traversal, absolute paths outside roots, and symlink escapes.
+- Follow the existing `dj-control-room-base` conventions: `PanelPlugin` for
+  registration, `panel_base.html` for templates, `dcr-*` design-system
+  classes for UI, `DJ_FILE_BROWSER_PANEL_SETTINGS` for configuration.
+- Listings must paginate — never load an entire directory into memory.
+- Keep tests on `tmp_path` fixtures — never touch the real filesystem in
+  tests.
 
 ## License
 
