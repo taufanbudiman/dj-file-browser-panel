@@ -64,7 +64,20 @@
   </div>
 </div>
 
-{% if file.preview is not None %}
+{% if file.preview_kind == "embed" %}
+<div class="dcr-card">
+  <div class="dcr-card__header">
+    <h3 class="dcr-card__title">{% trans "Preview" %}</h3>
+  </div>
+  <div class="dcr-card__body dcr-card__body--flush fb-preview-embed">
+    {% if file.mime_type == "application/pdf" %}
+    <embed src="{{ file_content_url }}" type="application/pdf" class="fb-embed" />
+    {% else %}
+    <img src="{{ file_content_url }}" alt="{{ file.name }}" class="fb-image" />
+    {% endif %}
+  </div>
+</div>
+{% elif file.preview is not None %}
 <div class="dcr-card">
   <div class="dcr-card__header">
     <h3 class="dcr-card__title">{% trans "Preview" %}</h3>

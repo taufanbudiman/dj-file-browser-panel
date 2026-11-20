@@ -65,6 +65,7 @@ class FileInfo:
     size_display: str
     modified: datetime
     mime_type: str
+    preview_kind: str | None  # "text", "embed", or None
     preview: str | None
     preview_truncated: bool
 
@@ -256,18 +257,27 @@ def list_directory(
     return Listing(entries, total, page, per_page, total_pages)
 
 
-def _preview_allowed(mime_type: str) -> bool:
+# MIME types rendered inline by the browser via the ``?content=1`` endpoint
+# (raster images and PDF). ``image/svg+xml`` is deliberately excluded: SVG
+# can carry scripts. These are gated only by ``PREVIEW_ENABLED`` — they are
+# never decoded into the HTML page itself.
+EMBED_PREVIEW_TYPES = frozenset({"application/pdf"})
+EMBED_PREVIEW_PREFIXES = ("image/",)
+
+
+def preview_kind(mime_type: str) -> str | None:
+    """Return ``"embed"``, ``"text"``, or ``None`` for a previewable MIME type."""
     cfg = panel_config.get_settings()
     if not cfg.get("PREVIEW_ENABLED"):
-        return False
-    try:
-        max_bytes = int(cfg.get("PREVIEW_MAX_BYTES"))
-    except (TypeError, ValueError):
-        max_bytes = 0
-    if max_bytes <= 0:
-        return False
+        return None
+    if mime_type in EMBED_PREVIEW_TYPES or (
+        mime_type.startswith(EMBED_PREVIEW_PREFIXES) and mime_type != "image/svg+xml"
+    ):
+        return "embed"
     allowed = cfg.get("PREVIEW_TYPES") or []
-    return mime_type in allowed or mime_type.startswith("text/")
+    if mime_type in allowed or mime_type.startswith("text/"):
+        return "text"
+    return None
 
 
 def _read_preview(path: Path) -> tuple[str | None, bool]:
@@ -306,9 +316,10 @@ def get_file_info(root: Root, rel_path: str) -> tuple[FileInfo | None, str | Non
         rel = target.name
 
     mime_type = mimetypes.guess_type(target.name)[0] or "application/octet-stream"
+    kind = preview_kind(mime_type)
     preview = None
     truncated = False
-    if _preview_allowed(mime_type):
+    if kind == "text":
         preview, truncated = _read_preview(target)
 
     info = FileInfo(
@@ -318,6 +329,7 @@ def get_file_info(root: Root, rel_path: str) -> tuple[FileInfo | None, str | Non
         size_display=human_size(st.st_size),
         modified=datetime.fromtimestamp(st.st_mtime, tz=timezone.utc),
         mime_type=mime_type,
+        preview_kind=kind,
         preview=preview,
         preview_truncated=truncated,
     )

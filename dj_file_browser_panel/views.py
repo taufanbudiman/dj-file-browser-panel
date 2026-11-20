@@ -7,10 +7,11 @@ configured root.
 
 from __future__ import annotations
 
+import mimetypes
 from dataclasses import replace
 from urllib.parse import quote, urlencode
 
-from django.http import Http404
+from django.http import FileResponse, Http404
 from django.shortcuts import render
 from django.urls import reverse
 
@@ -152,6 +153,9 @@ def _browse(request, root_slug: str, rel_path: str):
     if target.is_dir():
         return _browse_directory(request, context, root, rel_path, show_hidden)
 
+    if request.GET.get("content") == "1":
+        return _serve_embed_content(target)
+
     info, error = browser.get_file_info(root, rel_path)
     if error:
         context["error"] = error
@@ -162,9 +166,25 @@ def _browse(request, root_slug: str, rel_path: str):
         {
             "file": info,
             "parent_url": _browse_url(root.slug, parent_rel),
+            "file_content_url": _browse_url(root.slug, rel_path) + "?content=1",
         }
     )
     return render(request, "admin/dj_file_browser_panel/file_detail.html", context)
+
+
+def _serve_embed_content(target) -> FileResponse:
+    """Stream a previewable binary file (image/PDF) inline.
+
+    The path was already resolved inside a configured root by the caller.
+    Only MIME types classified as ``"embed"`` previews are served, and only
+    while ``PREVIEW_ENABLED`` is on.
+    """
+    mime_type = mimetypes.guess_type(target.name)[0] or "application/octet-stream"
+    if browser.preview_kind(mime_type) != "embed":
+        raise Http404("File type is not previewable")
+    response = FileResponse(target.open("rb"), content_type=mime_type)
+    response["X-Content-Type-Options"] = "nosniff"
+    return response
 
 
 def _browse_directory(

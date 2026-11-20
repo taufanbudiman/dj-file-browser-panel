@@ -1,5 +1,7 @@
 """View tests for the DJ File Browser Panel."""
 
+import os
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.urls import reverse
@@ -11,6 +13,8 @@ def media_tree(tmp_path, settings):
     (root / "sub").mkdir(parents=True)
     (root / "sub" / "nested.txt").write_text("nested file contents")
     (root / "hello.txt").write_text("hello world")
+    (root / "logo.png").write_bytes(b"\x89PNG\r\n\x1a\nfakepng")
+    (root / "doc.pdf").write_bytes(b"%PDF-1.4 fake pdf")
     (root / ".hidden").write_text("secret")
     settings.DJ_FILE_BROWSER_PANEL_SETTINGS = {
         "ROOTS": [{"name": "Media", "path": str(root)}],
@@ -137,22 +141,151 @@ class TestBrowse:
         assert b".hidden" in response.content
 
     def test_pagination(self, admin_client, media_tree, root_slug):
-        # per_page=1; visible entries are sub/ then hello.txt
+        # per_page=2; dirs first (sub/), then files case-insensitively:
+        # doc.pdf, hello.txt, logo.png
         page1 = admin_client.get(
             reverse("dj_file_browser_panel:browse_root", args=[root_slug])
-            + "?per_page=1"
+            + "?per_page=2"
         )
         assert b"/admin/files/media/sub/" in page1.content
+        assert b"doc.pdf" in page1.content
         assert b"hello.txt" not in page1.content
 
         page2 = admin_client.get(
             reverse("dj_file_browser_panel:browse_root", args=[root_slug])
-            + "?per_page=1&page=2"
+            + "?per_page=2&page=2"
         )
         assert page2.status_code == 200
         assert b"hello.txt" in page2.content
+        assert b"logo.png" in page2.content
         assert b"/admin/files/media/sub/" not in page2.content
         assert b"dcr-pagination" in page2.content
+
+    def test_embed_preview_image(self, admin_client, media_tree, root_slug):
+        response = admin_client.get(
+            reverse("dj_file_browser_panel:browse", args=[root_slug, "logo.png"])
+        )
+        assert response.status_code == 200
+        assert b"<img" in response.content
+        assert b"?content=1" in response.content
+
+    def test_embed_preview_pdf(self, admin_client, media_tree, root_slug):
+        response = admin_client.get(
+            reverse("dj_file_browser_panel:browse", args=[root_slug, "doc.pdf"])
+        )
+        assert response.status_code == 200
+        assert b"<embed" in response.content
+        assert b"application/pdf" in response.content
+
+    def test_embed_preview_disabled(
+        self, admin_client, media_tree, root_slug, settings
+    ):
+        settings.DJ_FILE_BROWSER_PANEL_SETTINGS = {
+            **settings.DJ_FILE_BROWSER_PANEL_SETTINGS,
+            "PREVIEW_ENABLED": False,
+        }
+        response = admin_client.get(
+            reverse("dj_file_browser_panel:browse", args=[root_slug, "logo.png"])
+        )
+        assert response.status_code == 200
+        assert b"<img" not in response.content
+
+    def test_content_endpoint_serves_image(self, admin_client, media_tree, root_slug):
+        url = (
+            reverse("dj_file_browser_panel:browse", args=[root_slug, "logo.png"])
+            + "?content=1"
+        )
+        response = admin_client.get(url)
+        assert response.status_code == 200
+        assert response["Content-Type"] == "image/png"
+        assert b"".join(response.streaming_content) == b"\x89PNG\r\n\x1a\nfakepng"
+
+    def test_content_endpoint_serves_pdf(self, admin_client, media_tree, root_slug):
+        url = (
+            reverse("dj_file_browser_panel:browse", args=[root_slug, "doc.pdf"])
+            + "?content=1"
+        )
+        response = admin_client.get(url)
+        assert response.status_code == 200
+        assert response["Content-Type"] == "application/pdf"
+
+    def test_content_endpoint_rejects_text(self, admin_client, media_tree, root_slug):
+        url = (
+            reverse("dj_file_browser_panel:browse", args=[root_slug, "hello.txt"])
+            + "?content=1"
+        )
+        response = admin_client.get(url)
+        assert response.status_code == 404
+
+    def test_content_endpoint_rejects_when_disabled(
+        self, admin_client, media_tree, root_slug, settings
+    ):
+        settings.DJ_FILE_BROWSER_PANEL_SETTINGS = {
+            **settings.DJ_FILE_BROWSER_PANEL_SETTINGS,
+            "PREVIEW_ENABLED": False,
+        }
+        url = (
+            reverse("dj_file_browser_panel:browse", args=[root_slug, "logo.png"])
+            + "?content=1"
+        )
+        response = admin_client.get(url)
+        assert response.status_code == 404
+
+    def test_content_endpoint_rejects_directory(
+        self, admin_client, media_tree, root_slug
+    ):
+        url = (
+            reverse("dj_file_browser_panel:browse", args=[root_slug, "sub"])
+            + "?content=1"
+        )
+        response = admin_client.get(url)
+        # directories go to the listing view, which ignores ?content=1
+        assert response.status_code == 200
+        assert b"nested.txt" in response.content
+
+    def test_hidden_toggle_off_override(self, admin_client, media_tree, root_slug):
+        response = admin_client.get(
+            reverse("dj_file_browser_panel:browse_root", args=[root_slug]) + "?hidden=0"
+        )
+        assert response.status_code == 200
+        assert b".hidden" not in response.content
+
+    def test_many_pages_smart_range(self, admin_client, media_tree, root_slug):
+        for i in range(12):
+            (media_tree / f"file-{i:02d}.txt").write_text("x")
+        response = admin_client.get(
+            reverse("dj_file_browser_panel:browse_root", args=[root_slug])
+            + "?per_page=1&page=7"
+        )
+        assert response.status_code == 200
+        assert b"&hellip;" in response.content
+
+    def test_permission_denied_directory(self, admin_client, media_tree, root_slug):
+        noperm = media_tree / "noperm"
+        noperm.mkdir()
+        (noperm / "secret.txt").write_text("x")
+        os.chmod(noperm, 0o000)
+        try:
+            response = admin_client.get(
+                reverse("dj_file_browser_panel:browse", args=[root_slug, "noperm"])
+            )
+        finally:
+            os.chmod(noperm, 0o755)
+        assert response.status_code == 200
+        assert b"Permission denied" in response.content
+
+    def test_bad_page_param_falls_back(self, admin_client, media_tree, root_slug):
+        response = admin_client.get(
+            reverse("dj_file_browser_panel:browse_root", args=[root_slug]) + "?page=abc"
+        )
+        assert response.status_code == 200
+
+    def test_per_page_capped(self, admin_client, media_tree, root_slug):
+        response = admin_client.get(
+            reverse("dj_file_browser_panel:browse_root", args=[root_slug])
+            + "?per_page=99999"
+        )
+        assert response.status_code == 200
 
     def test_anonymous_redirects_to_login(self, client, media_tree, root_slug):
         response = client.get(

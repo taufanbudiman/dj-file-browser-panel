@@ -1,6 +1,7 @@
 [![Django Control Room Panel](https://img.shields.io/badge/Django%20Control%20Room-Panel-0c4b33?logo=django)](https://djangocontrolroom.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python versions](https://img.shields.io/pypi/pyversions/dj-file-browser-panel.svg)](https://pypi.org/project/dj-file-browser-panel/)
+[![Coverage](https://img.shields.io/badge/coverage-93%25-brightgreen)](https://github.com/taufanbudiman/dj-file-browser-panel)
 
 
 # Django File Browser Panel
@@ -29,7 +30,8 @@ this panel in the Control Room to manage it from a centralized dashboard.
 - **Breadcrumbs + pagination**: navigate deep trees; large directories are
   paginated, never loaded whole.
 - **File details**: path, size, modified time, MIME type guess, and an
-  optional size-capped text preview.
+  optional preview — text files inline (size-capped), images and PDF
+  embedded via the browser.
 - **Hard read-only**: no upload, delete, rename, or chmod — there is no
   mutation code path at all.
 - **Path sandboxing**: every path is resolved and must stay inside a
@@ -92,8 +94,9 @@ DJ_FILE_BROWSER_PANEL_SETTINGS = {
     ],
     "PAGE_SIZE": 100,
     "SHOW_HIDDEN": False,
-    # File content preview (off by default). Only types in PREVIEW_TYPES
-    # (plus any text/* MIME type) up to PREVIEW_MAX_BYTES are read.
+    # File content preview (off by default). Raster images (except SVG)
+    # and PDF are embedded inline. PREVIEW_TYPES allowlists *text* preview
+    # MIME types (plus any text/* type), capped at PREVIEW_MAX_BYTES.
     "PREVIEW_ENABLED": False,
     "PREVIEW_MAX_BYTES": 262144,
     "PREVIEW_TYPES": [
@@ -118,7 +121,7 @@ documentation.
 
 ```bash
 pip install -e ".[dev]"
-pytest
+pytest   # runs the suite and writes coverage.xml + htmlcov/
 ruff check . && ruff format .
 ```
 

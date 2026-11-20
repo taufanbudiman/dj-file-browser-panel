@@ -8,7 +8,10 @@ panel_config = PanelConfig(
         "ROOTS": None,
         "PAGE_SIZE": 100,
         "SHOW_HIDDEN": False,
-        # File content preview: opt-in, size-capped, mime-allowlisted.
+        # File content preview: opt-in. Raster images (except SVG) and PDF
+        # are embedded inline when PREVIEW_ENABLED is on. PREVIEW_TYPES is
+        # the allowlist for *text* previews (plus any text/* MIME type),
+        # capped at PREVIEW_MAX_BYTES.
         "PREVIEW_ENABLED": False,
         "PREVIEW_MAX_BYTES": 262144,
         "PREVIEW_TYPES": [

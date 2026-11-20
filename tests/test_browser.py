@@ -236,6 +236,60 @@ class TestGetFileInfo:
         assert info2.preview is None
 
 
+class TestPreviewKind:
+    @pytest.fixture
+    def preview_settings(self, settings):
+        settings.DJ_FILE_BROWSER_PANEL_SETTINGS = {
+            "PREVIEW_ENABLED": True,
+            "PREVIEW_MAX_BYTES": 1024,
+            "PREVIEW_TYPES": ["application/json"],
+        }
+
+    def test_disabled_by_default(self, settings):
+        settings.DJ_FILE_BROWSER_PANEL_SETTINGS = {"PREVIEW_ENABLED": False}
+        assert browser.preview_kind("image/png") is None
+        assert browser.preview_kind("text/plain") is None
+        assert browser.preview_kind("application/pdf") is None
+
+    def test_embed_types(self, preview_settings):
+        assert browser.preview_kind("image/png") == "embed"
+        assert browser.preview_kind("image/jpeg") == "embed"
+        assert browser.preview_kind("image/gif") == "embed"
+        assert browser.preview_kind("image/webp") == "embed"
+        assert browser.preview_kind("application/pdf") == "embed"
+
+    def test_svg_not_embedded(self, preview_settings):
+        # SVG can carry scripts; not embedded even though it is image/*
+        assert browser.preview_kind("image/svg+xml") is None
+
+    def test_text_types(self, preview_settings):
+        assert browser.preview_kind("text/plain") == "text"
+        assert browser.preview_kind("text/csv") == "text"
+        assert browser.preview_kind("application/json") == "text"
+
+    def test_other_types_none(self, preview_settings):
+        assert browser.preview_kind("application/octet-stream") is None
+        assert browser.preview_kind("application/zip") is None
+
+    def test_svg_via_allowlist_is_text(self, settings):
+        settings.DJ_FILE_BROWSER_PANEL_SETTINGS = {
+            "PREVIEW_ENABLED": True,
+            "PREVIEW_TYPES": ["image/svg+xml"],
+        }
+        assert browser.preview_kind("image/svg+xml") == "text"
+
+    def test_file_info_embed(self, root_obj, settings):
+        (root_obj.path / "pic.png").write_bytes(b"\x89PNG fake")
+        settings.DJ_FILE_BROWSER_PANEL_SETTINGS = {
+            "ROOTS": [str(root_obj.path)],
+            "PREVIEW_ENABLED": True,
+        }
+        info, error = browser.get_file_info(root_obj, "pic.png")
+        assert error is None
+        assert info.preview_kind == "embed"
+        assert info.preview is None
+
+
 class TestHumanSize:
     @pytest.mark.parametrize(
         "size,expected",
