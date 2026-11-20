@@ -41,6 +41,24 @@ this panel in the Control Room to manage it from a centralized dashboard.
 - **Django admin styling**: dark mode and admin skins supported through
   `dj-control-room-base`.
 
+## Screenshots
+
+![Directory listing](assets/browse.png)
+
+![Image preview](assets/preview.png)
+
+## Known limitations
+
+- **Office document previews are not supported yet** — DOCX, XLSX, PPTX,
+  ODT and similar formats show metadata only. Rendering them faithfully
+  needs either server-side conversion (e.g. LibreOffice → PDF) or
+  client-side libraries; both are still under consideration.
+- Preview is strictly opt-in (`PREVIEW_ENABLED`) and capped by
+  `PREVIEW_MAX_BYTES`; SVG is deliberately excluded from image embeds.
+- This panel is intentionally read-only — there is no download button and
+  no archive extraction; raw bytes are only served for allowlisted
+  preview types.
+
 ## Requirements
 
 - Python 3.9+
