@@ -43,9 +43,9 @@ this panel in the Control Room to manage it from a centralized dashboard.
 
 ## Screenshots
 
-![Directory listing](assets/browse.png)
+![Directory listing](https://raw.githubusercontent.com/taufanbudiman/dj-file-browser-panel/main/assets/browse.png)
 
-![Image preview](assets/preview.png)
+![Image preview](https://raw.githubusercontent.com/taufanbudiman/dj-file-browser-panel/main/assets/preview.png)
 
 ## Known limitations
 
