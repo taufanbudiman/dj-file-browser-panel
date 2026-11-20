@@ -1,0 +1,148 @@
+{% extends "admin/dj_file_browser_panel/base.html" %}
+{% load i18n static dcr_icons %}
+
+{% block panel_breadcrumbs %}
+&rsaquo; <a href="{% url 'dj_file_browser_panel:index' %}">{% trans "File Browser" %}</a>
+&rsaquo; <a href="{{ root_url }}">{{ root.name }}</a>
+{% endblock %}
+
+{% block panel_content %}
+
+<div class="dcr-page-header">
+  <div class="dcr-page-header__main">
+    <div class="dcr-page-header__icon dcr-icon-color--accent">
+      {% dcr_icon "layers" %}
+    </div>
+    <div class="dcr-page-header__body">
+      <div class="dcr-page-header__title-row">
+        <h1 class="dcr-page-header__title">{{ root.name }}</h1>
+        {% if total_entries %}
+        <span class="dcr-badge">{{ total_entries }} {% trans "ENTRIES" }}</span>
+        {% endif %}
+      </div>
+      <p class="dcr-page-header__subtitle dcr-break-all"><code>{{ root.path }}</code></p>
+    </div>
+  </div>
+</div>
+
+<nav class="fb-breadcrumbs" aria-label="{% trans 'Path' %}">
+  {% for crumb in breadcrumbs %}
+    {% if not forloop.last %}
+    <a href="{{ crumb.url }}" class="fb-breadcrumbs__link">{{ crumb.name }}</a>
+    <span class="fb-breadcrumbs__sep" aria-hidden="true">/</span>
+    {% else %}
+    <span class="fb-breadcrumbs__current">{{ crumb.name }}</span>
+    {% endif %}
+  {% endfor %}
+</nav>
+
+{% if error %}
+<div class="dcr-callout dcr-callout--danger">
+  <p class="dcr-callout__body">{{ error }}</p>
+</div>
+{% else %}
+
+<div class="dcr-data-table">
+  <div class="dcr-data-table__header">
+    <div class="dcr-data-table__header-info">
+      <h3 class="dcr-data-table__title">{% trans "Contents" %}</h3>
+    </div>
+    <div class="dcr-data-table__actions">
+      <a href="?hidden={{ hidden_toggle }}{% if qs_no_hidden %}&amp;{{ qs_no_hidden }}{% endif %}" class="dcr-btn dcr-btn--sm dcr-btn--ghost">
+        {% if show_hidden %}{% trans "Hide dotfiles" %}{% else %}{% trans "Show dotfiles" %}{% endif %}
+      </a>
+    </div>
+  </div>
+  <div class="dcr-data-table__scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>{% trans "Name" %}</th>
+          <th class="dcr-col--right">{% trans "Size" %}</th>
+          <th class="dcr-col--right">{% trans "Modified" %}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if entries %}
+          {% for entry in entries %}
+          <tr>
+            <td>
+              {% if entry.is_safe %}
+                <a href="{{ entry.url }}" class="dcr-data-table__link fb-entry">
+                  <span class="fb-entry__icon" aria-hidden="true">
+                    {% if entry.is_dir %}
+                    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M1.5 4.5a1 1 0 0 1 1-1h3l1.5 1.5h6.5a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1v-7.5Z"/></svg>
+                    {% else %}
+                    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 1.5h5.5L13 5v9.5H4V1.5Z"/><path d="M9.5 1.5V5H13"/></svg>
+                    {% endif %}
+                  </span>
+                  {{ entry.name }}
+                </a>
+              {% else %}
+                <span class="fb-entry fb-entry--disabled" title="{% trans 'Symlink escapes the configured root' %}">
+                  <span class="fb-entry__icon" aria-hidden="true">
+                    <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M4 1.5h5.5L13 5v9.5H4V1.5Z"/><path d="M9.5 1.5V5H13"/></svg>
+                  </span>
+                  {{ entry.name }}
+                </span>
+                <span class="dcr-badge dcr-badge--warning dcr-text-xs">{% trans "UNSAFE LINK" }}</span>
+              {% endif %}
+            </td>
+            <td class="dcr-col--right">
+              {% if entry.is_dir %}<span class="dcr-text-muted">—</span>{% else %}{{ entry.size_display }}{% endif %}
+            </td>
+            <td class="dcr-col--right">
+              {% if entry.modified %}{{ entry.modified|date:"Y-m-d H:i" }}{% else %}<span class="dcr-text-muted">—</span>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+        <tr>
+          <td colspan="3">
+            <div class="dcr-empty">
+              <h2 class="dcr-empty__title">{% trans "Directory is empty" %}</h2>
+              <p class="dcr-empty__body">
+                {% if show_hidden %}{% trans "This directory contains no visible entries." %}{% else %}{% trans "This directory contains no entries. Dotfiles are hidden; use the toggle above to show them." %}{% endif %}
+              </p>
+            </div>
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if entries %}
+  <div class="dcr-pagination">
+    <div class="dcr-pagination__summary">
+      {% blocktrans with start=start_index end=end_index total=total_entries %}Showing {{ start }}–{{ end }} of {{ total }} entries{% endblocktrans %}
+    </div>
+    {% if total_pages > 1 %}
+    <div class="dcr-pagination__controls">
+      {% if has_previous %}
+      <a href="?page={{ previous_page }}{% if qs_extra %}&amp;{{ qs_extra }}{% endif %}" class="dcr-pagination__btn dcr-pagination__btn--prev">{% trans "Previous" %}</a>
+      {% else %}
+      <span class="dcr-pagination__btn dcr-pagination__btn--prev" aria-disabled="true">{% trans "Previous" %}</span>
+      {% endif %}
+      {% for num in page_range %}
+        {% if num == "..." %}
+        <span class="dcr-pagination__page">&hellip;</span>
+        {% elif num == current_page %}
+        <span class="dcr-pagination__page dcr-pagination__page--active">{{ num }}</span>
+        {% else %}
+        <a href="?page={{ num }}{% if qs_extra %}&amp;{{ qs_extra }}{% endif %}" class="dcr-pagination__page">{{ num }}</a>
+        {% endif %}
+      {% endfor %}
+      {% if has_next %}
+      <a href="?page={{ next_page }}{% if qs_extra %}&amp;{{ qs_extra }}{% endif %}" class="dcr-pagination__btn dcr-pagination__btn--next">{% trans "Next" %}</a>
+      {% else %}
+      <span class="dcr-pagination__btn dcr-pagination__btn--next" aria-disabled="true">{% trans "Next" %}</span>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}

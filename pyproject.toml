@@ -1,0 +1,119 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dj-file-browser-panel"
+version = "0.1.0"
+description = "A read-only Django Admin file browser panel for Django Control Room"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Taufan Budiman"},
+]
+maintainers = [
+    {name = "Taufan Budiman"},
+]
+requires-python = ">=3.9"
+classifiers = [
+    "Framework :: Django",
+    "Framework :: Django :: 4.2",
+    "Framework :: Django :: 5.0",
+    "Framework :: Django :: 5.1",
+    "Framework :: Django :: 5.2",
+    "Framework :: Django :: 6.0",
+    "Framework :: Django :: 6.1",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+]
+keywords = ["django", "file-browser", "admin", "panel", "filesystem", "media"]
+dependencies = [
+    "Django>=4.2",
+    "dj-control-room-base>=1.6.0",
+]
+
+[project.entry-points."dj_control_room.panels"]
+dj_file_browser_panel = "dj_file_browser_panel.panel:FileBrowserPanel"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-django>=4.5.0",
+    "pytest-cov>=4.0.0",
+    "pytest-xdist>=3.2.0",
+    "ruff>=0.6.0",
+]
+build = [
+    "build>=1.0.0",
+    "twine>=4.0.0",
+]
+
+[project.urls]
+Repository = "https://github.com/taufanbudiman/dj-file-browser-panel"
+"Bug Tracker" = "https://github.com/taufanbudiman/dj-file-browser-panel/issues"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+exclude = ["tests*", "example_project*"]
+
+[tool.setuptools.package-data]
+"dj_file_browser_panel" = ["templates/**/*", "static/**/*"]
+
+# pytest configuration
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "example_project.settings"
+pythonpath = ["example_project"]
+testpaths = ["tests"]
+addopts = [
+    "--verbose",
+    "--tb=short",
+    "--strict-markers",
+    "--disable-warnings",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+]
+
+# Coverage configuration
+[tool.coverage.run]
+source = ["dj_file_browser_panel"]
+omit = [
+    "*/migrations/*",
+    "*/tests/*",
+    "*/venv/*",
+    "*/env/*",
+    "example_project/*",
+    "*/__pycache__/*",
+    "*/site-packages/*",
+]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "pass",
+    "\\.\\.\\.",
+]
+show_missing = true
+skip_covered = false
+precision = 2
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.coverage.xml]
+output = "coverage.xml"

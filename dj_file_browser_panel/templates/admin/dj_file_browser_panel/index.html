@@ -1,0 +1,92 @@
+{% extends "admin/dj_file_browser_panel/base.html" %}
+{% load i18n static dcr_icons %}
+
+{% block panel_content %}
+
+<div class="dcr-page-header">
+  <div class="dcr-page-header__main">
+    <div class="dcr-page-header__icon dcr-icon-color--accent">
+      {% dcr_icon "layers" %}
+    </div>
+    <div class="dcr-page-header__body">
+      <div class="dcr-page-header__title-row">
+        <h1 class="dcr-page-header__title">{% trans "Browsable Roots" %}</h1>
+        {% if roots %}
+        <span class="dcr-badge">{{ roots|length }} {% trans "CONFIGURED" %}</span>
+        {% endif %}
+      </div>
+      <p class="dcr-page-header__subtitle">
+        {% trans "Read-only access to media, static, and any other configured filesystem roots." %}
+      </p>
+    </div>
+  </div>
+</div>
+
+{% if roots %}
+<div class="dcr-data-table">
+  <div class="dcr-data-table__header">
+    <div class="dcr-data-table__header-info">
+      <h3 class="dcr-data-table__title">{% trans "Roots" %}</h3>
+    </div>
+  </div>
+  <div class="dcr-data-table__scroll">
+    <table>
+      <thead>
+        <tr>
+          <th>{% trans "Root" %}</th>
+          <th>{% trans "Path" %}</th>
+          <th class="dcr-col--right">{% trans "Entries" %}</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for root in roots %}
+        <tr>
+          <td>
+            <a href="{{ root.url }}" class="dcr-data-table__link"><strong>{{ root.name }}</strong></a>
+            {% if root.description %}
+            <div class="dcr-text-muted dcr-text-sm">{{ root.description }}</div>
+            {% endif %}
+          </td>
+          <td><code>{{ root.path }}</code></td>
+          <td class="dcr-col--right">
+            {% if root.entry_count is not None %}{{ root.entry_count }}{% else %}<span class="dcr-text-muted">—</span>{% endif %}
+          </td>
+          <td class="dcr-col--right">
+            <a href="{{ root.url }}" class="dcr-btn dcr-btn--sm dcr-btn--ghost">{% trans "Browse" %}</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% else %}
+<div class="dcr-empty">
+  <h2 class="dcr-empty__title">{% trans "No browsable roots" %}</h2>
+  <p class="dcr-empty__body">
+    {% trans "No configured root exists or is a directory. By default the panel browses MEDIA_ROOT and STATIC_ROOT; configure DJ_FILE_BROWSER_PANEL_SETTINGS to add more." %}
+  </p>
+</div>
+
+<div class="dcr-section-header dcr-mt-lg">
+  <h3 class="dcr-section-header__title">{% trans "Example configuration" %}</h3>
+</div>
+<div class="dcr-code-viewer">
+  <div class="dcr-code-viewer__header">
+    <span class="dcr-code-viewer__label">&lt;&gt; settings.py</span>
+  </div>
+  <pre class="dcr-code-viewer__body"><code class="language-python">DJ_FILE_BROWSER_PANEL_SETTINGS = {
+    "ROOTS": [
+        {"name": "Media", "path": MEDIA_ROOT},
+        {"name": "Static", "path": STATIC_ROOT},
+        "/var/www/uploads",
+    ],
+    "PAGE_SIZE": 100,
+    "SHOW_HIDDEN": False,
+    "PREVIEW_ENABLED": False,
+}</code></pre>
+</div>
+{% endif %}
+
+{% endblock %}

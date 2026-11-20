@@ -1,0 +1,81 @@
+{% extends "admin/dj_file_browser_panel/base.html" %}
+{% load i18n static dcr_icons %}
+
+{% block panel_breadcrumbs %}
+&rsaquo; <a href="{% url 'dj_file_browser_panel:index' %}">{% trans "File Browser" %}</a>
+&rsaquo; <a href="{{ root_url }}">{{ root.name }}</a>
+{% endblock %}
+
+{% block panel_content %}
+
+<a href="{{ parent_url }}" class="dcr-back-link">{% trans "Back to directory" %}</a>
+
+<div class="dcr-page-header">
+  <div class="dcr-page-header__main">
+    <div class="dcr-page-header__icon dcr-icon-color--accent">
+      {% dcr_icon "layers" %}
+    </div>
+    <div class="dcr-page-header__body">
+      <div class="dcr-page-header__title-row">
+        <h1 class="dcr-page-header__title fb-break-all">{{ file.name }}</h1>
+        <span class="dcr-badge">{{ file.mime_type }}</span>
+      </div>
+      <p class="dcr-page-header__subtitle dcr-break-all"><code>{{ file.rel_path }}</code></p>
+    </div>
+  </div>
+</div>
+
+<nav class="fb-breadcrumbs" aria-label="{% trans 'Path' %}">
+  {% for crumb in breadcrumbs %}
+    {% if not forloop.last %}
+    <a href="{{ crumb.url }}" class="fb-breadcrumbs__link">{{ crumb.name }}</a>
+    <span class="fb-breadcrumbs__sep" aria-hidden="true">/</span>
+    {% else %}
+    <span class="fb-breadcrumbs__current">{{ crumb.name }}</span>
+    {% endif %}
+  {% endfor %}
+</nav>
+
+<div class="dcr-card">
+  <div class="dcr-card__header">
+    <h3 class="dcr-card__title">{% trans "File information" %}</h3>
+  </div>
+  <div class="dcr-card__body">
+    <div class="dcr-card__row">
+      <span class="dcr-card__row-label">{% trans "Name" %}</span>
+      <span class="dcr-card__row-value">{{ file.name }}</span>
+    </div>
+    <div class="dcr-card__row">
+      <span class="dcr-card__row-label">{% trans "Path" %}</span>
+      <span class="dcr-card__row-value dcr-break-all"><code>{{ root.path }}/{{ file.rel_path }}</code></span>
+    </div>
+    <div class="dcr-card__row">
+      <span class="dcr-card__row-label">{% trans "Size" %}</span>
+      <span class="dcr-card__row-value">{{ file.size_display }}</span>
+    </div>
+    <div class="dcr-card__row">
+      <span class="dcr-card__row-label">{% trans "Modified" %}</span>
+      <span class="dcr-card__row-value">{{ file.modified|date:"Y-m-d H:i:s T" }}</span>
+    </div>
+    <div class="dcr-card__row">
+      <span class="dcr-card__row-label">{% trans "MIME type" %}</span>
+      <span class="dcr-card__row-value">{{ file.mime_type }}</span>
+    </div>
+  </div>
+</div>
+
+{% if file.preview is not None %}
+<div class="dcr-card">
+  <div class="dcr-card__header">
+    <h3 class="dcr-card__title">{% trans "Preview" %}</h3>
+    {% if file.preview_truncated %}
+    <span class="dcr-badge dcr-badge--warning">{% trans "TRUNCATED" %}</span>
+    {% endif %}
+  </div>
+  <div class="dcr-card__body dcr-card__body--flush">
+    <pre class="fb-preview"><code>{{ file.preview }}</code></pre>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

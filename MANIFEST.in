@@ -1,0 +1,3 @@
+include README.md
+recursive-include dj_file_browser_panel/templates *
+recursive-include dj_file_browser_panel/static *
