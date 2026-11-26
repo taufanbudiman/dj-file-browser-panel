@@ -135,6 +135,71 @@ per-scope `SCOPE_PERMISSIONS` overrides — see the
 [dj-control-room-base](https://github.com/django-control-room/dj-control-room)
 documentation.
 
+## Syntax highlighting
+
+`dj-control-room-base` ships the styles for its `dcr-code-viewer` component
+and a vendored copy of highlight.js, but highlighting is opt-in per page.
+Any panel template that renders code inside
+`<pre class="dcr-code-viewer__body"><code class="language-…">` can enable it
+by overriding `{% block extrahead %}` — keep `{{ block.super }}` so the base
+styles still load:
+
+```django
+{% block extrahead %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'dj_control_room_base/vendor/highlight-github-dark.min.css' %}">
+<script src="{% static 'dj_control_room_base/vendor/highlight.min.js' %}"></script>
+<script src="{% static 'dj_control_room_base/vendor/highlight-python.min.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.dcr-code-viewer__body code').forEach(function (el) {
+        hljs.highlightElement(el);
+    });
+});
+</script>
+{% endblock %}
+```
+
+This is exactly what the index page does for its "Example configuration"
+block. Load `highlight-python.min.js` (or another language pack from
+`dj_control_room_base/vendor/`) matching the `language-*` class on your
+`<code>` element.
+
+If your page reveals code lazily — e.g. inside a collapsible
+`<details class="source-preview-details">` — highlight on toggle instead of
+on page load, and skip elements already highlighted:
+
+```django
+{% block extrahead %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'dj_control_room_base/vendor/highlight-github-dark.min.css' %}">
+<script src="{% static 'dj_control_room_base/vendor/highlight.min.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('details.source-preview-details').forEach(function (details) {
+        details.addEventListener('toggle', function () {
+            if (details.open) {
+                details.querySelectorAll('pre.dcr-code-viewer__body code').forEach(function (el) {
+                    if (!el.dataset.highlighted) {
+                        hljs.highlightElement(el);
+                    }
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+```
+
+Newer `dj-control-room-base` releases may expose a `dj_cr_show_source`
+context flag you can wrap the block in (`{% if dj_cr_show_source %}`) so the
+assets only load when source previewing is active.
+
+Note: these selectors only match `dcr-code-viewer` / `source-preview-details`
+markup. This panel's own text preview (`fb-preview` on the file detail page)
+is plain `<pre><code>` and is not syntax-highlighted.
+
 ## Development
 
 ```bash

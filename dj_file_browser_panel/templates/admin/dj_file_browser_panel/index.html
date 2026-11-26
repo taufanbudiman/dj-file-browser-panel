@@ -1,6 +1,20 @@
 {% extends "admin/dj_file_browser_panel/base.html" %}
 {% load i18n static dcr_icons %}
 
+{% block extrahead %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'dj_control_room_base/vendor/highlight-github-dark.min.css' %}">
+<script src="{% static 'dj_control_room_base/vendor/highlight.min.js' %}"></script>
+<script src="{% static 'dj_control_room_base/vendor/highlight-python.min.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.dcr-code-viewer__body code').forEach(function (el) {
+        hljs.highlightElement(el);
+    });
+});
+</script>
+{% endblock %}
+
 {% block panel_content %}
 
 <div class="dcr-page-header">
@@ -68,15 +82,20 @@
     {% trans "No configured root exists or is a directory. By default the panel browses MEDIA_ROOT and STATIC_ROOT; configure DJ_FILE_BROWSER_PANEL_SETTINGS to add more." %}
   </p>
 </div>
+{% endif %}
 
-<div class="dcr-section-header dcr-mt-lg">
-  <h3 class="dcr-section-header__title">{% trans "Example configuration" %}</h3>
-</div>
-<div class="dcr-code-viewer">
-  <div class="dcr-code-viewer__header">
-    <span class="dcr-code-viewer__label">&lt;&gt; settings.py</span>
-  </div>
-  <pre class="dcr-code-viewer__body"><code class="language-python">DJ_FILE_BROWSER_PANEL_SETTINGS = {
+<details class="fb-example-config dcr-mt-lg">
+  <summary class="dcr-section-header fb-example-config__summary">
+    <svg class="fb-example-config__chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+    <span class="dcr-section-header__title">{% trans "Example configuration" %}</span>
+  </summary>
+  <div class="dcr-code-viewer">
+    <div class="dcr-code-viewer__header">
+      <span class="dcr-code-viewer__label">&lt;&gt; settings.py</span>
+    </div>
+    <pre class="dcr-code-viewer__body"><code class="language-python">DJ_FILE_BROWSER_PANEL_SETTINGS = {
     "ROOTS": [
         {"name": "Media", "path": MEDIA_ROOT},
         {"name": "Static", "path": STATIC_ROOT},
@@ -86,7 +105,7 @@
     "SHOW_HIDDEN": False,
     "PREVIEW_ENABLED": False,
 }</code></pre>
-</div>
-{% endif %}
+  </div>
+</details>
 
 {% endblock %}
