@@ -26,7 +26,8 @@ this panel in the Control Room to manage it from a centralized dashboard.
 - **Browsable roots**: `MEDIA_ROOT` and `STATIC_ROOT` by default, or any list
   of directories via `DJ_FILE_BROWSER_PANEL_SETTINGS["ROOTS"]`.
 - **Directory listings**: folders first, then files; name, human-readable
-  size, and modified time. Dotfiles hidden by default with a toggle.
+  size, and modified time. Dotfiles are hidden by default; an in-page
+  toggle reveals them. Page size is selectable per listing (10–250).
 - **Breadcrumbs + pagination**: navigate deep trees; large directories are
   paginated, never loaded whole.
 - **File details**: path, size, modified time, MIME type guess, and an
@@ -110,8 +111,9 @@ DJ_FILE_BROWSER_PANEL_SETTINGS = {
         {"name": "Static", "path": STATIC_ROOT},
         "/var/www/uploads",
     ],
+    # Default entries per page; users can override per listing via the
+    # in-UI page-size selector (10/25/50/100/250).
     "PAGE_SIZE": 100,
-    "SHOW_HIDDEN": False,
     # File content preview (off by default). Raster images (except SVG)
     # and PDF are embedded inline. PREVIEW_TYPES allowlists *text* preview
     # MIME types (plus any text/* type), capped at PREVIEW_MAX_BYTES.

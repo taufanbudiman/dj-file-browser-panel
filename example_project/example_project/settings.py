@@ -138,7 +138,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # With no ROOTS key the panel browses MEDIA_ROOT and STATIC_ROOT.
 DJ_FILE_BROWSER_PANEL_SETTINGS = {
     "PAGE_SIZE": 50,
-    "SHOW_HIDDEN": False,
     "PREVIEW_ENABLED": True,
     "PREVIEW_MAX_BYTES": 262144,
     "PREVIEW_TYPES": [

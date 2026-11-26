@@ -6,8 +6,9 @@ panel_config = PanelConfig(
         # None -> fall back to MEDIA_ROOT + STATIC_ROOT. Each entry may be a
         # path string or {"name": ..., "path": ..., "description": ...}.
         "ROOTS": None,
+        # Default page size for directory listings; users can pick a
+        # different size per page via the in-UI page-size selector.
         "PAGE_SIZE": 100,
-        "SHOW_HIDDEN": False,
         # File content preview: opt-in. Raster images (except SVG) and PDF
         # are embedded inline when PREVIEW_ENABLED is on. PREVIEW_TYPES is
         # the allowlist for *text* previews (plus any text/* MIME type),

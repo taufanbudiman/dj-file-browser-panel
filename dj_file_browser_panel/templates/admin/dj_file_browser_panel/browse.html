@@ -114,8 +114,23 @@
 
   {% if entries %}
   <div class="dcr-pagination">
-    <div class="dcr-pagination__summary">
-      {% blocktrans with start=start_index end=end_index total=total_entries %}Showing {{ start }}–{{ end }} of {{ total }} entries{% endblocktrans %}
+    <div class="dcr-pagination__per-page">
+      <span class="dcr-pagination__summary">
+        {% blocktrans with start=start_index end=end_index total=total_entries %}Showing {{ start }}–{{ end }} of {{ total }} entries{% endblocktrans %}
+      </span>
+      <form method="get" class="fb-per-page">
+        {% if show_hidden %}<input type="hidden" name="hidden" value="1">{% endif %}
+        <label>{% trans "Per page" %}
+          <select name="per_page" class="dcr-pagination__per-page-select" onchange="this.form.submit()">
+            {% if per_page not in page_size_options %}
+            <option value="{{ per_page }}" selected>{{ per_page }}</option>
+            {% endif %}
+            {% for option in page_size_options %}
+            <option value="{{ option }}" {% if option == per_page %}selected{% endif %}>{{ option }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      </form>
     </div>
     {% if total_pages > 1 %}
     <div class="dcr-pagination__controls">

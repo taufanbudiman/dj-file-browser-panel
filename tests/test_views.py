@@ -141,25 +141,73 @@ class TestBrowse:
         assert b".hidden" in response.content
 
     def test_pagination(self, admin_client, media_tree, root_slug):
-        # per_page=2; dirs first (sub/), then files case-insensitively:
-        # doc.pdf, hello.txt, logo.png
+        for i in range(10):
+            (media_tree / f"file-{i:02d}.txt").write_text("x")
+        # per_page=10; dirs first (sub/), then files case-insensitively:
+        # doc.pdf, file-00..file-09, hello.txt, logo.png (14 entries total)
         page1 = admin_client.get(
             reverse("dj_file_browser_panel:browse_root", args=[root_slug])
-            + "?per_page=2"
+            + "?per_page=10"
         )
         assert b"/admin/files/media/sub/" in page1.content
         assert b"doc.pdf" in page1.content
+        assert b"file-07.txt" in page1.content
+        assert b"file-08.txt" not in page1.content
         assert b"hello.txt" not in page1.content
 
         page2 = admin_client.get(
             reverse("dj_file_browser_panel:browse_root", args=[root_slug])
-            + "?per_page=2&page=2"
+            + "?per_page=10&page=2"
         )
         assert page2.status_code == 200
+        assert b"file-08.txt" in page2.content
+        assert b"file-09.txt" in page2.content
         assert b"hello.txt" in page2.content
         assert b"logo.png" in page2.content
         assert b"/admin/files/media/sub/" not in page2.content
         assert b"dcr-pagination" in page2.content
+
+    def test_page_size_selector(self, admin_client, media_tree, root_slug):
+        response = admin_client.get(
+            reverse("dj_file_browser_panel:browse_root", args=[root_slug])
+        )
+        assert response.status_code == 200
+        content = response.content
+        assert b'name="per_page"' in content
+        assert b'class="dcr-pagination__per-page-select"' in content
+        for size in (b"10", b"25", b"50", b"100", b"250"):
+            assert b'value="%s"' % size in content
+
+    def test_page_size_selector_marks_current(
+        self, admin_client, media_tree, root_slug
+    ):
+        response = admin_client.get(
+            reverse("dj_file_browser_panel:browse_root", args=[root_slug])
+            + "?per_page=25"
+        )
+        assert response.status_code == 200
+        assert b'<option value="25" selected>25</option>' in response.content
+
+    def test_per_page_outside_options_falls_back(
+        self, admin_client, media_tree, root_slug
+    ):
+        # per_page=2 is not one of the selector options; it is ignored and
+        # the configured PAGE_SIZE default (100) is used instead.
+        response = admin_client.get(
+            reverse("dj_file_browser_panel:browse_root", args=[root_slug])
+            + "?per_page=2"
+        )
+        assert response.status_code == 200
+        assert response.context["per_page"] == 100
+
+    def test_page_size_selector_preserves_hidden(
+        self, admin_client, media_tree, root_slug
+    ):
+        response = admin_client.get(
+            reverse("dj_file_browser_panel:browse_root", args=[root_slug]) + "?hidden=1"
+        )
+        assert response.status_code == 200
+        assert b'name="hidden" value="1"' in response.content
 
     def test_embed_preview_image(self, admin_client, media_tree, root_slug):
         response = admin_client.get(
@@ -250,12 +298,19 @@ class TestBrowse:
         assert response.status_code == 200
         assert b".hidden" not in response.content
 
-    def test_many_pages_smart_range(self, admin_client, media_tree, root_slug):
-        for i in range(12):
+    def test_many_pages_smart_range(
+        self, admin_client, media_tree, root_slug, settings
+    ):
+        # PAGE_SIZE is the admin-configured default and may be any value;
+        # only URL per_page values are restricted to the selector options.
+        settings.DJ_FILE_BROWSER_PANEL_SETTINGS = {
+            **settings.DJ_FILE_BROWSER_PANEL_SETTINGS,
+            "PAGE_SIZE": 2,
+        }
+        for i in range(25):
             (media_tree / f"file-{i:02d}.txt").write_text("x")
         response = admin_client.get(
-            reverse("dj_file_browser_panel:browse_root", args=[root_slug])
-            + "?per_page=1&page=7"
+            reverse("dj_file_browser_panel:browse_root", args=[root_slug]) + "?page=7"
         )
         assert response.status_code == 200
         assert b"&hellip;" in response.content
@@ -280,12 +335,15 @@ class TestBrowse:
         )
         assert response.status_code == 200
 
-    def test_per_page_capped(self, admin_client, media_tree, root_slug):
+    def test_per_page_outside_options_ignored(
+        self, admin_client, media_tree, root_slug
+    ):
         response = admin_client.get(
             reverse("dj_file_browser_panel:browse_root", args=[root_slug])
             + "?per_page=99999"
         )
         assert response.status_code == 200
+        assert response.context["per_page"] == 100
 
     def test_anonymous_redirects_to_login(self, client, media_tree, root_slug):
         response = client.get(

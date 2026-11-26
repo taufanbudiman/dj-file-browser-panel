@@ -91,6 +91,20 @@
     object-fit: contain;
 }
 
+.fb-per-page {
+    display: inline-flex;
+    align-items: center;
+    margin: 0;
+}
+
+.fb-per-page label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--dcr-space-sm, 8px);
+    color: var(--dcr-color-text-muted);
+    font-size: var(--dcr-font-size-sm, 13px);
+}
+
 .fb-example-config__summary {
     cursor: pointer;
     list-style: none;
