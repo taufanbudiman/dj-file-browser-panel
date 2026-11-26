@@ -6,6 +6,10 @@ panel_config = PanelConfig(
         # None -> fall back to MEDIA_ROOT + STATIC_ROOT. Each entry may be a
         # path string or {"name": ..., "path": ..., "description": ...}.
         "ROOTS": None,
+        # Security: browsing exposes absolute paths and file metadata, so
+        # only superusers may access the panel by default. Set
+        # "REQUIRE_SUPERUSER": False and/or "ALLOWED_GROUPS" to widen access.
+        "REQUIRE_SUPERUSER": True,
         # Default page size for directory listings; users can pick a
         # different size per page via the in-UI page-size selector.
         "PAGE_SIZE": 100,

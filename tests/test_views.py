@@ -4,6 +4,7 @@ import os
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.urls import reverse
 
 
@@ -61,7 +62,21 @@ class TestIndex:
         response = client.get(reverse("dj_file_browser_panel:index"))
         assert response.status_code == 403
 
-    def test_index_staff_allowed(self, client, media_tree, db):
+    def test_index_staff_forbidden_by_default(self, client, media_tree, db):
+        user = get_user_model().objects.create_user(
+            username="staff", password="pw", is_staff=True
+        )
+        client.force_login(user)
+        response = client.get(reverse("dj_file_browser_panel:index"))
+        assert response.status_code == 403
+
+    def test_index_staff_allowed_when_superuser_not_required(
+        self, client, media_tree, settings, db
+    ):
+        settings.DJ_FILE_BROWSER_PANEL_SETTINGS = {
+            **settings.DJ_FILE_BROWSER_PANEL_SETTINGS,
+            "REQUIRE_SUPERUSER": False,
+        }
         user = get_user_model().objects.create_user(
             username="staff", password="pw", is_staff=True
         )
@@ -69,9 +84,48 @@ class TestIndex:
         response = client.get(reverse("dj_file_browser_panel:index"))
         assert response.status_code == 200
 
+    def test_index_staff_in_allowed_group(self, client, media_tree, settings, db):
+        settings.DJ_FILE_BROWSER_PANEL_SETTINGS = {
+            **settings.DJ_FILE_BROWSER_PANEL_SETTINGS,
+            "REQUIRE_SUPERUSER": False,
+            "ALLOWED_GROUPS": ["FileBrowser"],
+        }
+        group = Group.objects.create(name="FileBrowser")
+        user = get_user_model().objects.create_user(
+            username="staff", password="pw", is_staff=True
+        )
+        user.groups.add(group)
+        client.force_login(user)
+        response = client.get(reverse("dj_file_browser_panel:index"))
+        assert response.status_code == 200
+
+    def test_index_staff_not_in_allowed_group(self, client, media_tree, settings, db):
+        settings.DJ_FILE_BROWSER_PANEL_SETTINGS = {
+            **settings.DJ_FILE_BROWSER_PANEL_SETTINGS,
+            "REQUIRE_SUPERUSER": False,
+            "ALLOWED_GROUPS": ["FileBrowser"],
+        }
+        Group.objects.create(name="FileBrowser")
+        user = get_user_model().objects.create_user(
+            username="staff", password="pw", is_staff=True
+        )
+        client.force_login(user)
+        response = client.get(reverse("dj_file_browser_panel:index"))
+        assert response.status_code == 403
+
 
 @pytest.mark.django_db
 class TestBrowse:
+    def test_browse_staff_forbidden_by_default(self, client, media_tree, root_slug, db):
+        user = get_user_model().objects.create_user(
+            username="staff", password="pw", is_staff=True
+        )
+        client.force_login(user)
+        response = client.get(
+            reverse("dj_file_browser_panel:browse_root", args=[root_slug])
+        )
+        assert response.status_code == 403
+
     def test_browse_root(self, admin_client, media_tree, root_slug):
         response = admin_client.get(
             reverse("dj_file_browser_panel:browse_root", args=[root_slug])

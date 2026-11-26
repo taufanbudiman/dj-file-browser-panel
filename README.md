@@ -114,6 +114,9 @@ DJ_FILE_BROWSER_PANEL_SETTINGS = {
     # Default entries per page; users can override per listing via the
     # in-UI page-size selector (10/25/50/100/250).
     "PAGE_SIZE": 100,
+    # Access control (dj-control-room-base permission model). Superusers
+    # only by default; set False and/or ALLOWED_GROUPS to widen access.
+    "REQUIRE_SUPERUSER": True,
     # File content preview (off by default). Raster images (except SVG)
     # and PDF are embedded inline. PREVIEW_TYPES allowlists *text* preview
     # MIME types (plus any text/* type), capped at PREVIEW_MAX_BYTES.
@@ -131,11 +134,18 @@ All keys are optional; unset keys fall back to the defaults above. Roots
 that don't exist or aren't directories are skipped — if none are valid the
 panel shows an empty state instead of an error.
 
-Access control follows the `dj-control-room-base` panel permission model:
-staff users only, with optional `ALLOWED_GROUPS`, `REQUIRE_SUPERUSER`, and
-per-scope `SCOPE_PERMISSIONS` overrides — see the
+Access control follows the `dj-control-room-base` panel permission model —
+but note that **only superusers can use this panel by default**
+(`REQUIRE_SUPERUSER: True`). Browsing exposes absolute filesystem paths,
+file names, sizes, and previewable contents, so think twice before widening
+access: any user who can open the panel can enumerate every configured
+root, which may include directories outside `MEDIA_ROOT`/`STATIC_ROOT`
+(e.g. `/var/www/uploads`). To allow non-superuser staff, set
+`"REQUIRE_SUPERUSER": False` and/or restrict to `"ALLOWED_GROUPS"` in
+`DJ_FILE_BROWSER_PANEL_SETTINGS`; per-scope `SCOPE_PERMISSIONS` overrides
+are also supported. See the
 [dj-control-room-base](https://github.com/django-control-room/dj-control-room)
-documentation.
+documentation for details.
 
 ## Syntax highlighting
 
