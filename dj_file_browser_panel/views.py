@@ -18,6 +18,10 @@ from django.urls import reverse
 from . import browser
 from .conf import panel_config
 
+# Page sizes offered by the in-UI selector; ``?per_page`` values outside
+# this list fall back to the configured ``PAGE_SIZE`` default.
+PAGE_SIZE_OPTIONS = [10, 25, 50, 100, 250]
+
 
 def _get_page_range(current_page: int, total_pages: int) -> list:
     """Smart page range for pagination display."""
@@ -65,12 +69,7 @@ def _query_suffix(request, include_hidden: bool = True) -> str:
 
 
 def _show_hidden(request) -> bool:
-    override = request.GET.get("hidden")
-    if override == "1":
-        return True
-    if override == "0":
-        return False
-    return bool(panel_config.get_settings("SHOW_HIDDEN"))
+    return request.GET.get("hidden") == "1"
 
 
 def _breadcrumbs(root: browser.Root, rel_path: str) -> list[dict]:
@@ -128,6 +127,7 @@ def browse(request, root_slug, rel_path):
 def _browse(request, root_slug: str, rel_path: str):
     root = _resolve_root(root_slug)
     show_hidden = _show_hidden(request)
+    parent_rel = rel_path.rsplit("/", 1)[0] if "/" in rel_path else ""
 
     context = panel_config.get_context(
         request,
@@ -135,6 +135,11 @@ def _browse(request, root_slug: str, rel_path: str):
         root=root,
         root_url=reverse("dj_file_browser_panel:browse_root", args=[root.slug]),
         rel_path=rel_path,
+        parent_url=(
+            _browse_url(root.slug, parent_rel)
+            if rel_path
+            else reverse("dj_file_browser_panel:index")
+        ),
         breadcrumbs=_breadcrumbs(root, rel_path),
         show_hidden=show_hidden,
         hidden_toggle="0" if show_hidden else "1",
@@ -161,7 +166,6 @@ def _browse(request, root_slug: str, rel_path: str):
         context["error"] = error
         return render(request, "admin/dj_file_browser_panel/browse.html", context)
 
-    parent_rel = rel_path.rsplit("/", 1)[0] if "/" in rel_path else ""
     context.update(
         {
             "file": info,
@@ -192,7 +196,14 @@ def _browse_directory(
 ):
     page = _int_param(request, "page", 1)
     default_per_page = int(panel_config.get_settings("PAGE_SIZE") or 100)
-    per_page = min(_int_param(request, "per_page", default_per_page), 500)
+    requested_per_page = _int_param(request, "per_page", default_per_page)
+    # Only sizes offered by the page-size selector are accepted; anything
+    # else falls back to the configured default.
+    per_page = (
+        requested_per_page
+        if requested_per_page in PAGE_SIZE_OPTIONS
+        else default_per_page
+    )
 
     listing = browser.list_directory(
         root,
@@ -218,6 +229,7 @@ def _browse_directory(
             "total_entries": listing.total,
             "current_page": listing.page,
             "per_page": listing.per_page,
+            "page_size_options": PAGE_SIZE_OPTIONS,
             "total_pages": listing.total_pages,
             "has_previous": listing.page > 1,
             "has_next": listing.page < listing.total_pages,

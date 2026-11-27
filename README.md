@@ -26,7 +26,8 @@ this panel in the Control Room to manage it from a centralized dashboard.
 - **Browsable roots**: `MEDIA_ROOT` and `STATIC_ROOT` by default, or any list
   of directories via `DJ_FILE_BROWSER_PANEL_SETTINGS["ROOTS"]`.
 - **Directory listings**: folders first, then files; name, human-readable
-  size, and modified time. Dotfiles hidden by default with a toggle.
+  size, and modified time. Dotfiles are hidden by default; an in-page
+  toggle reveals them. Page size is selectable per listing (10–250).
 - **Breadcrumbs + pagination**: navigate deep trees; large directories are
   paginated, never loaded whole.
 - **File details**: path, size, modified time, MIME type guess, and an
@@ -110,8 +111,12 @@ DJ_FILE_BROWSER_PANEL_SETTINGS = {
         {"name": "Static", "path": STATIC_ROOT},
         "/var/www/uploads",
     ],
+    # Default entries per page; users can override per listing via the
+    # in-UI page-size selector (10/25/50/100/250).
     "PAGE_SIZE": 100,
-    "SHOW_HIDDEN": False,
+    # Access control (dj-control-room-base permission model). Superusers
+    # only by default; set False and/or ALLOWED_GROUPS to widen access.
+    "REQUIRE_SUPERUSER": True,
     # File content preview (off by default). Raster images (except SVG)
     # and PDF are embedded inline. PREVIEW_TYPES allowlists *text* preview
     # MIME types (plus any text/* type), capped at PREVIEW_MAX_BYTES.
@@ -129,11 +134,83 @@ All keys are optional; unset keys fall back to the defaults above. Roots
 that don't exist or aren't directories are skipped — if none are valid the
 panel shows an empty state instead of an error.
 
-Access control follows the `dj-control-room-base` panel permission model:
-staff users only, with optional `ALLOWED_GROUPS`, `REQUIRE_SUPERUSER`, and
-per-scope `SCOPE_PERMISSIONS` overrides — see the
+Access control follows the `dj-control-room-base` panel permission model —
+but note that **only superusers can use this panel by default**
+(`REQUIRE_SUPERUSER: True`). Browsing exposes absolute filesystem paths,
+file names, sizes, and previewable contents, so think twice before widening
+access: any user who can open the panel can enumerate every configured
+root, which may include directories outside `MEDIA_ROOT`/`STATIC_ROOT`
+(e.g. `/var/www/uploads`). To allow non-superuser staff, set
+`"REQUIRE_SUPERUSER": False` and/or restrict to `"ALLOWED_GROUPS"` in
+`DJ_FILE_BROWSER_PANEL_SETTINGS`; per-scope `SCOPE_PERMISSIONS` overrides
+are also supported. See the
 [dj-control-room-base](https://github.com/django-control-room/dj-control-room)
-documentation.
+documentation for details.
+
+## Syntax highlighting
+
+`dj-control-room-base` ships the styles for its `dcr-code-viewer` component
+and a vendored copy of highlight.js, but highlighting is opt-in per page.
+Any panel template that renders code inside
+`<pre class="dcr-code-viewer__body"><code class="language-…">` can enable it
+by overriding `{% block extrahead %}` — keep `{{ block.super }}` so the base
+styles still load:
+
+```django
+{% block extrahead %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'dj_control_room_base/vendor/highlight-github-dark.min.css' %}">
+<script src="{% static 'dj_control_room_base/vendor/highlight.min.js' %}"></script>
+<script src="{% static 'dj_control_room_base/vendor/highlight-python.min.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.dcr-code-viewer__body code').forEach(function (el) {
+        hljs.highlightElement(el);
+    });
+});
+</script>
+{% endblock %}
+```
+
+This is exactly what the index page does for its "Example configuration"
+block. Load `highlight-python.min.js` (or another language pack from
+`dj_control_room_base/vendor/`) matching the `language-*` class on your
+`<code>` element.
+
+If your page reveals code lazily — e.g. inside a collapsible
+`<details class="source-preview-details">` — highlight on toggle instead of
+on page load, and skip elements already highlighted:
+
+```django
+{% block extrahead %}
+{{ block.super }}
+<link rel="stylesheet" href="{% static 'dj_control_room_base/vendor/highlight-github-dark.min.css' %}">
+<script src="{% static 'dj_control_room_base/vendor/highlight.min.js' %}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('details.source-preview-details').forEach(function (details) {
+        details.addEventListener('toggle', function () {
+            if (details.open) {
+                details.querySelectorAll('pre.dcr-code-viewer__body code').forEach(function (el) {
+                    if (!el.dataset.highlighted) {
+                        hljs.highlightElement(el);
+                    }
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+```
+
+Newer `dj-control-room-base` releases may expose a `dj_cr_show_source`
+context flag you can wrap the block in (`{% if dj_cr_show_source %}`) so the
+assets only load when source previewing is active.
+
+Note: these selectors only match `dcr-code-viewer` / `source-preview-details`
+markup. This panel's own text preview (`fb-preview` on the file detail page)
+is plain `<pre><code>` and is not syntax-highlighted.
 
 ## Development
 

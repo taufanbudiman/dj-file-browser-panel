@@ -8,7 +8,11 @@
 
 {% block panel_content %}
 
-<a href="{{ parent_url }}" class="dcr-back-link">{% trans "Back to directory" %}</a>
+<div class="fb-nav-links">
+  <a href="{{ parent_url }}" class="dcr-back-link">{% trans "Up One Level" %}</a>
+  <span class="fb-nav-links__sep" aria-hidden="true">/</span>
+  <a href="{% url 'dj_file_browser_panel:index' %}" class="fb-nav-links__roots">{% trans "All Browsable Roots" %}</a>
+</div>
 
 <div class="dcr-page-header">
   <div class="dcr-page-header__main">

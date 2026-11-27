@@ -8,6 +8,16 @@
 
 {% block panel_content %}
 
+<div class="fb-nav-links">
+  <a href="{{ parent_url }}" class="dcr-back-link">
+    {% if rel_path %}{% trans "Up One Level" %}{% else %}{% trans "Back To Browsable Roots" %}{% endif %}
+  </a>
+  {% if rel_path %}
+  <span class="fb-nav-links__sep" aria-hidden="true">/</span>
+  <a href="{% url 'dj_file_browser_panel:index' %}" class="fb-nav-links__roots">{% trans "All Browsable Roots" %}</a>
+  {% endif %}
+</div>
+
 <div class="dcr-page-header">
   <div class="dcr-page-header__main">
     <div class="dcr-page-header__icon dcr-icon-color--accent">
@@ -114,8 +124,23 @@
 
   {% if entries %}
   <div class="dcr-pagination">
-    <div class="dcr-pagination__summary">
-      {% blocktrans with start=start_index end=end_index total=total_entries %}Showing {{ start }}–{{ end }} of {{ total }} entries{% endblocktrans %}
+    <div class="dcr-pagination__per-page">
+      <span class="dcr-pagination__summary">
+        {% blocktrans with start=start_index end=end_index total=total_entries %}Showing {{ start }}–{{ end }} of {{ total }} entries{% endblocktrans %}
+      </span>
+      <form method="get" class="fb-per-page">
+        {% if show_hidden %}<input type="hidden" name="hidden" value="1">{% endif %}
+        <label>{% trans "Per page" %}
+          <select name="per_page" class="dcr-pagination__per-page-select" onchange="this.form.submit()">
+            {% if per_page not in page_size_options %}
+            <option value="{{ per_page }}" selected>{{ per_page }}</option>
+            {% endif %}
+            {% for option in page_size_options %}
+            <option value="{{ option }}" {% if option == per_page %}selected{% endif %}>{{ option }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      </form>
     </div>
     {% if total_pages > 1 %}
     <div class="dcr-pagination__controls">
