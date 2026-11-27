@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "dj-file-browser-panel"
-version = "0.1.0"
+version = "0.2.0"
 description = "A read-only Django Admin file browser panel for Django Control Room"
 readme = "README.md"
 license = {text = "MIT"}
