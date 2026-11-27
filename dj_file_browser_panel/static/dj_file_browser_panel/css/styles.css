@@ -2,6 +2,36 @@
  * DJ File Browser Panel — panel-specific styles.
  */
 
+.fb-nav-links {
+    display: flex;
+    align-items: center;
+    gap: var(--dcr-space-md, 16px);
+    margin-bottom: var(--dcr-space-md, 16px);
+}
+
+.fb-nav-links .dcr-back-link {
+    margin: 0;
+}
+
+.fb-nav-links .dcr-back-link:hover {
+    color: var(--link-hover-color, var(--dcr-color-accent));
+    text-decoration: none !important;
+}
+
+.fb-nav-links__sep {
+    color: var(--dcr-color-text-muted);
+    opacity: 0.6;
+}
+
+.fb-nav-links__roots {
+    color: var(--dcr-color-text-muted);
+    text-decoration: none;
+}
+
+.fb-nav-links__roots:hover {
+    color: var(--link-hover-color, var(--dcr-color-accent));
+}
+
 .fb-breadcrumbs {
     display: flex;
     flex-wrap: wrap;

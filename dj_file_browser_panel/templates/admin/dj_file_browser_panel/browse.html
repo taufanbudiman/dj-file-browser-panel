@@ -8,6 +8,16 @@
 
 {% block panel_content %}
 
+<div class="fb-nav-links">
+  <a href="{{ parent_url }}" class="dcr-back-link">
+    {% if rel_path %}{% trans "Up One Level" %}{% else %}{% trans "Back To Browsable Roots" %}{% endif %}
+  </a>
+  {% if rel_path %}
+  <span class="fb-nav-links__sep" aria-hidden="true">/</span>
+  <a href="{% url 'dj_file_browser_panel:index' %}" class="fb-nav-links__roots">{% trans "All Browsable Roots" %}</a>
+  {% endif %}
+</div>
+
 <div class="dcr-page-header">
   <div class="dcr-page-header__main">
     <div class="dcr-page-header__icon dcr-icon-color--accent">

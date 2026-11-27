@@ -50,7 +50,6 @@ document.addEventListener('DOMContentLoaded', function () {
           <th>{% trans "Root" %}</th>
           <th>{% trans "Path" %}</th>
           <th class="dcr-col--right">{% trans "Entries" %}</th>
-          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -65,9 +64,6 @@ document.addEventListener('DOMContentLoaded', function () {
           <td><code>{{ root.path }}</code></td>
           <td class="dcr-col--right">
             {% if root.entry_count is not None %}{{ root.entry_count }}{% else %}<span class="dcr-text-muted">—</span>{% endif %}
-          </td>
-          <td class="dcr-col--right">
-            <a href="{{ root.url }}" class="dcr-btn dcr-btn--sm dcr-btn--ghost">{% trans "Browse" %}</a>
           </td>
         </tr>
         {% endfor %}

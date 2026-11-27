@@ -127,6 +127,7 @@ def browse(request, root_slug, rel_path):
 def _browse(request, root_slug: str, rel_path: str):
     root = _resolve_root(root_slug)
     show_hidden = _show_hidden(request)
+    parent_rel = rel_path.rsplit("/", 1)[0] if "/" in rel_path else ""
 
     context = panel_config.get_context(
         request,
@@ -134,6 +135,11 @@ def _browse(request, root_slug: str, rel_path: str):
         root=root,
         root_url=reverse("dj_file_browser_panel:browse_root", args=[root.slug]),
         rel_path=rel_path,
+        parent_url=(
+            _browse_url(root.slug, parent_rel)
+            if rel_path
+            else reverse("dj_file_browser_panel:index")
+        ),
         breadcrumbs=_breadcrumbs(root, rel_path),
         show_hidden=show_hidden,
         hidden_toggle="0" if show_hidden else "1",
@@ -160,7 +166,6 @@ def _browse(request, root_slug: str, rel_path: str):
         context["error"] = error
         return render(request, "admin/dj_file_browser_panel/browse.html", context)
 
-    parent_rel = rel_path.rsplit("/", 1)[0] if "/" in rel_path else ""
     context.update(
         {
             "file": info,
